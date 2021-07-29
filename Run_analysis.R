@@ -52,10 +52,7 @@ main_result <-read.csv(paste0(LOCATION, "/param_exploration.csv.xz"))
 ## calculate and plot profiles.
 
 profile <- param_profiles(main_result)
-
-#png(paste0(LOCATION, "/profiles_main.png"), width=800, height=1000)
 do.call(grid.arrange, c(profile$plots, list(ncol = 2, nrow = 3)))
-#dev.off()
 
 ###################
 # Refine best fits
@@ -77,36 +74,33 @@ best <- best.fits[1,]
 best$loglike <- NULL
 best.fit <- mle2(helper.mle.fun.2,
                  start = as.list(prep.guess(best)),
-                 optimizer = "optimx", method = "bobyqa") # Depends on your computer it can take a while
+                 optimizer = "optimx", method = "bobyqa") # Depending on your computer it can take a while
 
 ## Table of parameter estimates and 95% CI (Table 1: main fitting)
 
 # Load output (To avoid take all the time on computing the mle2)
-load(paste0(LOCATION, "/bestfit75.RData"))
+# load(paste0(LOCATION, "/bestfit.RData")) # You can alternatively load the best.fit object
 
 best.parms <- prep.coef(best.fit)               # Get estimates
 best.conf <- prep.conf(best.fit, method="quad") # Get parameters confidence interval
 print(cbind(estimate = best.parms, best.conf))  # Print result table
 
 # Save output
-write.csv(cbind(estimate = best.parms, best.conf),
-          file = paste0(LOCATION, "/best_coefs.csv"))
-
-#! save(best.fit, sol, file = paste0(LOCATION, "/best_fit_test.RData"))
+#write.csv(cbind(estimate = best.parms, best.conf),
+#          file = paste0(LOCATION, "/best_coefs.csv"))
 
 # Calculate solution confidence interval
 ## It take a while for greater n, n=1000 will take about several minutes
 sol.CI <- solution_CI(best.fit, n=1000, conv.logit=c(1,3,4))
 
 ## Plot results (Figure 2) 
-# png(paste0(LOCATION, "/solutionCI_test.png"), width=800, height=1000)
 plot.3.CI(sol.CI)
-# dev.off()
 
 # Estimate number of reinfections
 
-sol.r <- get.reinfections(prep.guess.inv(best))
-save(sol.r, file = "results/sol_r_test.Rdata")
+sol.r <- get.reinfections(best)
+reinfection_proportion <- sol.r["reinf"] / sum(sol.r["C2"])
+print(reinfection_proportion)
 
 ###################################################################
 ##############  Sensitivity Analyses    ###########################
@@ -154,10 +148,7 @@ SA1_result <- read.csv(paste0(LOCATION, "/param_exploration_ihr_free_test.csv"))
 ## calculate and plot profiles
 
 profile_sa1 <- param_profiles(SA1_result)
-
-#png(paste0(LOCATION, "/profiles_ihr_free_test.png"), width=800, height=1000)
 do.call(grid.arrange, c(profile_sa1$plots, list(ncol = 2, nrow = 3)))
-#dev.off()
 
 ###################
 # Refine best fits
@@ -172,14 +163,14 @@ do.call(grid.arrange, c(profile_sa1$plots, list(ncol = 2, nrow = 3)))
 #                         optimizer = "optimx",
 #                         method = "bobyqa")
 
-best.fits.sa1 <- read.csv(paste0(LOCATION, "/best.fits_ihr_free_test.csv"))
+best.fits.sa1 <- read.csv(paste0(LOCATION, "/best.fits_ihr_free.csv"))
 
 # Create best fit object
 best.sa1 <- best.fits.sa1[1,]
 best.sa1$loglike <- NULL
 best.fit.sa1 <- mle2(helper.mle.fun.6,
                  start = as.list(prep.guess(best.sa1)),
-                 optimizer = "optimx", method = "bobyqa")
+                 optimizer = "optimx", method = "bobyqa") # Depending on your computer it may take a while
 
 ## Table of parameter estimates and 95% CI (Table 1: SA1)
 
@@ -188,8 +179,8 @@ best.conf <- prep.conf(best.fit.sa1, method="quad") # Get parameters confidence 
 print(bind(estimate = best.parms, best.conf))       # Print result table
 
 # Save output
-write.csv(cbind(estimate = best.parms, best.conf),
-          file = paste0(LOCATION, "/best_coefs_ihr_free_test.csv"))
+#write.csv(cbind(estimate = best.parms, best.conf),
+#          file = paste0(LOCATION, "/best_coefs_ihr_free.csv"))
 
 ###################################
 ### SA 2 - Health system collapse
@@ -200,7 +191,6 @@ write.csv(cbind(estimate = best.parms, best.conf),
 
 # This filters the data after January 10
 covid.zoo <- window(covid.zoo, end="2021-01-10")
-
 
 ###################
 # Refine best fits
@@ -216,21 +206,15 @@ best.fits.sa2 <- fit_minima(paste0(LOCATION, "/param_exploration.csv"),
                         optimizer = "optimx",
                         method = "bobyqa")
 
-# best.fits.sa2 <- read.csv(paste0(LOCATION, "/best.fits_up_to_mid_jan.csv"))
-
 # Create best fit object
 best.sa2 <- best.fits.sa2[1,]
 best.sa2$loglike <- NULL
 best.fit.sa2 <- mle2(helper.mle.fun.2,
                  start = as.list(prep.guess(best.sa2)),
-                 optimizer = "optimx", method = "bobyqa")
+                 optimizer = "optimx", method = "bobyqa") # Depending on your computer it may take a while
 
 # table of parameter estimates and 95% CI (Table 1: SA2)
 
 best.parms <- prep.coef(best.fit.sa2)               # Get estimates
 best.conf <- prep.conf(best.fit.sa2, method="quad") # Get parameters confidence interval
 print(cbind(estimate = best.parms, best.conf))      # Print result table
-
-# Save output
-write.csv(cbind(estimate = best.parms, best.conf),
-          file = paste0(LOCATION, "/best_coefs_up_to_mid-jan_test.csv"))
