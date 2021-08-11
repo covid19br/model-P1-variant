@@ -20,7 +20,7 @@ source('functions/SEIR_run.R')
 #' @return A data.frame of Cumulative case of each strain.
 #' 
 
-model_solution <- function(params, full_solution = FALSE, return_compartments = FALSE, ...) {
+model_solution <- function(params, full_solution = FALSE, return_compartments = FALSE,C.diff = TRUE, ...) {
 
     if ("prevalence" %in% names(params) | "r" %in% names(params)) {
         if ("prevalence" %in% names(params))
@@ -56,7 +56,8 @@ model_solution <- function(params, full_solution = FALSE, return_compartments = 
     new.POP0 <- POP0
     new.POP0[4:15] <- POP0[4:15] * (1-params["INIT.V2.FRAC"])
     new.POP0[25:36] <- POP0[4:15] * params["INIT.V2.FRAC"]
-
+    
+    # print(sum(new.POP0))
     diffEqs <- func.factory(REL_BETA_RATE2 = params["REL.BETA.RATE2"],
                             PROB_REINFEC_V2 = params["PROB.REINFEC.V2"],
                             BETA_RATE1 = BETA.RATE1,
@@ -69,38 +70,41 @@ model_solution <- function(params, full_solution = FALSE, return_compartments = 
     
     if (full_solution)
         return(SOLUTION)
-    sol <- data.frame(time = SOLUTION[-1,"time"],
-                      C1 = diff(SOLUTION[,"POP.C11"] + SOLUTION[,"POP.C12"] + SOLUTION[,"POP.C13"]),
-                      C2 = diff(SOLUTION[,"POP.C21"] + SOLUTION[,"POP.C22"] + SOLUTION[,"POP.C23"]),
+    sol <- data.frame(time = SOLUTION[,"time"],
+                      # C1 = c(0,diff(SOLUTION[,"POP.C11"] + SOLUTION[,"POP.C12"] + SOLUTION[,"POP.C13"])),
+                      # C2 = c(0,diff(SOLUTION[,"POP.C21"] + SOLUTION[,"POP.C22"] + SOLUTION[,"POP.C23"])),
+                      C1 = SOLUTION[,"POP.C11"] + SOLUTION[,"POP.C12"] + SOLUTION[,"POP.C13"],
+                      C2 = SOLUTION[,"POP.C21"] + SOLUTION[,"POP.C22"] + SOLUTION[,"POP.C23"],
+                      S = SOLUTION[,"POP.S1"] + SOLUTION[,"POP.S2"] + SOLUTION[,"POP.S3"],
                       
-                      S = diff(SOLUTION[,"POP.S1"] + SOLUTION[,"POP.S2"] + SOLUTION[,"POP.S3"]),
+                      E1 = SOLUTION[,"POP.E11"] + SOLUTION[,"POP.E12"] + SOLUTION[,"POP.E13"],
+                      E2 = SOLUTION[,"POP.E21"] + SOLUTION[,"POP.E22"] + SOLUTION[,"POP.E23"],
                       
-                      E1 = diff(SOLUTION[,"POP.E11"] + SOLUTION[,"POP.E12"] + SOLUTION[,"POP.E13"]),
-                      E2 = diff(SOLUTION[,"POP.E21"] + SOLUTION[,"POP.E22"] + SOLUTION[,"POP.E23"]),
+                      A1 = SOLUTION[,"POP.A11"] + SOLUTION[,"POP.A12"] + SOLUTION[,"POP.A13"],
+                      A2 = SOLUTION[,"POP.A21"] + SOLUTION[,"POP.A22"] + SOLUTION[,"POP.A23"],
                       
-                      A1 = diff(SOLUTION[,"POP.A11"] + SOLUTION[,"POP.A12"] + SOLUTION[,"POP.A13"]),
-                      A2 = diff(SOLUTION[,"POP.A21"] + SOLUTION[,"POP.A22"] + SOLUTION[,"POP.A23"]),
+                      I1 = SOLUTION[,"POP.I11"] + SOLUTION[,"POP.I12"] + SOLUTION[,"POP.I13"],
+                      I2 = SOLUTION[,"POP.I21"] + SOLUTION[,"POP.I22"] + SOLUTION[,"POP.I23"],
                       
-                      I1 = diff(SOLUTION[,"POP.I11"] + SOLUTION[,"POP.I12"] + SOLUTION[,"POP.I13"]),
-                      I2 = diff(SOLUTION[,"POP.I21"] + SOLUTION[,"POP.I22"] + SOLUTION[,"POP.I23"]),
+                      H1 = SOLUTION[,"POP.H11"] + SOLUTION[,"POP.H12"] + SOLUTION[,"POP.H13"],
+                      H2 = SOLUTION[,"POP.H21"] + SOLUTION[,"POP.H22"] + SOLUTION[,"POP.H23"],
                       
-                      H1 = diff(SOLUTION[,"POP.H11"] + SOLUTION[,"POP.H12"] + SOLUTION[,"POP.H13"]),
-                      H2 = diff(SOLUTION[,"POP.H21"] + SOLUTION[,"POP.H22"] + SOLUTION[,"POP.H23"]),
+                      R1 = SOLUTION[,"POP.R11"] + SOLUTION[,"POP.R12"] + SOLUTION[,"POP.R13"],
+                      R2 = SOLUTION[,"POP.R21"] + SOLUTION[,"POP.R22"] + SOLUTION[,"POP.R23"],
                       
-                      R1 = diff(SOLUTION[,"POP.R11"] + SOLUTION[,"POP.R12"] + SOLUTION[,"POP.R13"]),
-                      R2 = diff(SOLUTION[,"POP.R21"] + SOLUTION[,"POP.R22"] + SOLUTION[,"POP.R23"]),
-                      
-                      D1 = diff(SOLUTION[,"POP.D11"] + SOLUTION[,"POP.D12"] + SOLUTION[,"POP.D13"]),
-                      D2 = diff(SOLUTION[,"POP.D21"] + SOLUTION[,"POP.D22"] + SOLUTION[,"POP.D23"]))
+                      D1 = SOLUTION[,"POP.D11"] + SOLUTION[,"POP.D12"] + SOLUTION[,"POP.D13"],
+                      D2 = SOLUTION[,"POP.D21"] + SOLUTION[,"POP.D22"] + SOLUTION[,"POP.D23"])
     sol$time <- d0 + (sol$time -1)
-
+    if(C.diff){
+        sol$C1 <- c(0,diff(sol$C1))
+        sol$C2 <- c(0,diff(sol$C2))
+    }
     # aggregating data by the frequency time windows
     freq <- rep(NA, nrow(d))
     for (i in 1:nrow(d)) {
         soli <- sol[sol$time >= d[i,"t_start"] & sol$time <= d[i,"t_end"],]
         freq[i] <- sum(soli$C2) / sum(soli$C1, soli$C2)
     }
-
     # aggregating by epidemiological week
     if(!return_compartments) {
     sol <- sol %>%
@@ -114,20 +118,21 @@ model_solution <- function(params, full_solution = FALSE, return_compartments = 
             mutate(week = end.of.epiweek(time, end = 0)) %>%
             group_by(week) %>%
             summarise(C1 = sum(C1), C2 = sum(C2),
-                      S = sum(S),
-                      E1 = sum(E1), E2 = sum(E2),
-                      A1 = sum(A1), A2 = sum(A2),
-                      I1 = sum(I1), I2 = sum(I2),
-                      H1 = sum(H1), H2 = sum(H2),
-                      R1 = sum(R1), R2 = sum(R2),
-                      D1 = sum(D1), D2 = sum(D2)) %>%
+                      S = S[which.max(time)],
+                      E1 = E1[which.max(time)], E2 = E2[which.max(time)],
+                      A1 = A1[which.max(time)], A2 = A2[which.max(time)],
+                      I1 = I1[which.max(time)], I2 = I2[which.max(time)],
+                      H1 = H1[which.max(time)], H2 = H2[which.max(time)],
+                      R1 = R1[which.max(time)], R2 = R2[which.max(time)],
+                      D1 = D1[which.max(time)], D2 = D2[which.max(time)]) %>%
             as.data.frame()
+    
         sol.zoo <- zoo(sol[,c("C1","C2","S","E1","E2","A1","A2","I1","I2","H1","H2","R1","R2","D1","D2")], sol$week)     
     }
     
     # first point is not a full week
     sol.zoo <- sol.zoo[-1]
-    
+    # print(sum(sol.zoo[nrow(sol.zoo),c("S","E1","E2","A1","A2","I1","I2","H1","H2","R1","R2","D1","D2")]))
     index(covid.zoo) <- as.Date(index(covid.zoo))
     d.cases <- merge.zoo(sol.zoo, covid.zoo, all = FALSE)
     return(list(cases = d.cases, freq = cbind(d, pred.freq=freq)))
