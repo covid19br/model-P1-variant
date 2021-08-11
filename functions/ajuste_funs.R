@@ -20,7 +20,7 @@ source('functions/SEIR_run.R')
 #' @return A data.frame of Cumulative case of each strain.
 #' 
 
-model_solution <- function(params, full_solution = FALSE, ...) {
+model_solution <- function(params, full_solution = FALSE, return_compartments = FALSE, ...) {
 
     if ("prevalence" %in% names(params) | "r" %in% names(params)) {
         if ("prevalence" %in% names(params))
@@ -71,7 +71,27 @@ model_solution <- function(params, full_solution = FALSE, ...) {
         return(SOLUTION)
     sol <- data.frame(time = SOLUTION[-1,"time"],
                       C1 = diff(SOLUTION[,"POP.C11"] + SOLUTION[,"POP.C12"] + SOLUTION[,"POP.C13"]),
-                      C2 = diff(SOLUTION[,"POP.C21"] + SOLUTION[,"POP.C22"] + SOLUTION[,"POP.C23"]))
+                      C2 = diff(SOLUTION[,"POP.C21"] + SOLUTION[,"POP.C22"] + SOLUTION[,"POP.C23"]),
+                      
+                      S = diff(SOLUTION[,"POP.S1"] + SOLUTION[,"POP.S2"] + SOLUTION[,"POP.S3"]),
+                      
+                      E1 = diff(SOLUTION[,"POP.E11"] + SOLUTION[,"POP.E12"] + SOLUTION[,"POP.E13"]),
+                      E2 = diff(SOLUTION[,"POP.E21"] + SOLUTION[,"POP.E22"] + SOLUTION[,"POP.E23"]),
+                      
+                      A1 = diff(SOLUTION[,"POP.A11"] + SOLUTION[,"POP.A12"] + SOLUTION[,"POP.A13"]),
+                      A2 = diff(SOLUTION[,"POP.A21"] + SOLUTION[,"POP.A22"] + SOLUTION[,"POP.A23"]),
+                      
+                      I1 = diff(SOLUTION[,"POP.I11"] + SOLUTION[,"POP.I12"] + SOLUTION[,"POP.I13"]),
+                      I2 = diff(SOLUTION[,"POP.I21"] + SOLUTION[,"POP.I22"] + SOLUTION[,"POP.I23"]),
+                      
+                      H1 = diff(SOLUTION[,"POP.H11"] + SOLUTION[,"POP.H12"] + SOLUTION[,"POP.H13"]),
+                      H2 = diff(SOLUTION[,"POP.H21"] + SOLUTION[,"POP.H22"] + SOLUTION[,"POP.H23"]),
+                      
+                      R1 = diff(SOLUTION[,"POP.R11"] + SOLUTION[,"POP.R12"] + SOLUTION[,"POP.R13"]),
+                      R2 = diff(SOLUTION[,"POP.R21"] + SOLUTION[,"POP.R22"] + SOLUTION[,"POP.R23"]),
+                      
+                      D1 = diff(SOLUTION[,"POP.D11"] + SOLUTION[,"POP.D12"] + SOLUTION[,"POP.D13"]),
+                      D2 = diff(SOLUTION[,"POP.D21"] + SOLUTION[,"POP.D22"] + SOLUTION[,"POP.D23"]))
     sol$time <- d0 + (sol$time -1)
 
     # aggregating data by the frequency time windows
@@ -82,12 +102,29 @@ model_solution <- function(params, full_solution = FALSE, ...) {
     }
 
     # aggregating by epidemiological week
+    if(!return_compartments) {
     sol <- sol %>%
         mutate(week = end.of.epiweek(time, end = 0)) %>%
         group_by(week) %>%
         summarise(C1 = sum(C1), C2 = sum(C2)) %>%
         as.data.frame()
-    sol.zoo <- zoo(sol[,c("C1","C2")], sol$week)
+    sol.zoo <- zoo(sol[,c("C1","C2")], sol$week) } else {
+        
+    sol <- sol %>%
+            mutate(week = end.of.epiweek(time, end = 0)) %>%
+            group_by(week) %>%
+            summarise(C1 = sum(C1), C2 = sum(C2),
+                      S = sum(S),
+                      E1 = sum(E1), E2 = sum(E2),
+                      A1 = sum(A1), A2 = sum(A2),
+                      I1 = sum(I1), I2 = sum(I2),
+                      H1 = sum(H1), H2 = sum(H2),
+                      R1 = sum(R1), R2 = sum(R2),
+                      D1 = sum(D1), D2 = sum(D2)) %>%
+            as.data.frame()
+        sol.zoo <- zoo(sol[,c("C1","C2","S","E1","E2","A1","A2","I1","I2","H1","H2","R1","R2","D1","D2")], sol$week)     
+    }
+    
     # first point is not a full week
     sol.zoo <- sol.zoo[-1]
     

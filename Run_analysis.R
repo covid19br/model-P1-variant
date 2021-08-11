@@ -1,5 +1,3 @@
-setwd('~/Users/Marcelo/Manaus')
-
 #' The following variable names corresponds to the following parameters shown in the paper:
 #' REL.BETA.RATE2: Relative transmission rate for the new variant
 #' PROB.REINFEC.V2: Relative force of reinfection of P.1
