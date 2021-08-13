@@ -41,7 +41,9 @@ find_minima <- function(dados) {
 # prof <- param_profiles(dados)
 # do.call(grid.arrange, c(prof$plots, list(ncol = 2, nrow =3)))
 # calcula perfis
-param_profiles <- function(dados, plot = TRUE) {
+param_profiles <- function(dados, plot = TRUE, x_lab = c("Initial fraction of the new variant", "Relative transmission rate\nfor the new variant",
+                                                                  "Relative force of reinfection of P.1", "Prevalence of the previous infection",
+                                                                  "Intrinsic growth rate")) {
     value.col <- "neg.loglike"
     margin.cols <- setdiff(colnames(dados), value.col)
     perfil <- list()
@@ -53,7 +55,8 @@ param_profiles <- function(dados, plot = TRUE) {
             as.data.frame
         perfil[[col]]$neg.loglike <-  perfil[[col]]$neg.loglike - min(perfil[[col]]$neg.loglike)
         if (plot)
-            plots.perfis[[col]] <- ggplot(perfil[[col]]) + geom_point(aes_string(x=col, y=value.col))
+            plots.perfis[[col]] <- ggplot(perfil[[col]]) + geom_point(aes_string(x=col, y=value.col)) +
+            theme_minimal() + ylab("Negative log likelihood\n") + xlab(paste0("\n",x_lab[which(col == margin.cols)]))
     }
     if (plot) {
         return(list(profiles = perfil, plots = plots.perfis))

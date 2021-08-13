@@ -50,7 +50,9 @@ main_result <-read.csv(paste0(LOCATION, "/param_exploration.csv.xz"))
 ## calculate and plot profiles.
 
 profile <- param_profiles(main_result)
-do.call(grid.arrange, c(profile$plots, list(ncol = 2, nrow = 3)))
+profile_main_plot <- do.call(grid.arrange, c(profile$plots, list(ncol = 2, nrow = 3)))
+profile_main_plot
+#ggsave(profile_main_plot, file = "results/profile_main_plot.pdf", width = 8, height = 8)
 
 ###################
 # Refine best fits
@@ -66,6 +68,20 @@ do.call(grid.arrange, c(profile$plots, list(ncol = 2, nrow = 3)))
 #                         method = "bobyqa")
 
 best.fits <- read.csv(paste0(LOCATION, "/best.fits.csv"))
+
+## Plot profile from best fits
+
+profile_bestfits <- param_profiles(best.fits %>% select(-loglike))
+profile_bestfits$plots[[1]] <- profile_bestfits$plots[[1]] + xlim(0.00033,0.00037) + ylim(0,0.004)#+ xlim(0.00033,0.00037) + ylim(0,0.0015)
+profile_bestfits$plots[[2]] <- profile_bestfits$plots[[2]] + xlim(2.604,2.6059) + ylim(0,0.0001)
+profile_bestfits$plots[[3]] <- profile_bestfits$plots[[3]] + xlim(0.0278,0.0280) + ylim(0,0.00015)
+profile_bestfits$plots[[4]] <- profile_bestfits$plots[[4]] + xlim(72,74.7) + ylim(0,0.1)
+profile_bestfits$plots[[5]] <- profile_bestfits$plots[[5]] + xlim(0.0307,0.0309) + ylim(0,0.0009)
+
+profile_bestfits_plot <- do.call(grid.arrange, c(profile_bestfits$plots, list(ncol = 2, nrow = 3)))
+profile_bestfits_plot
+#ggsave(profile_bestfits_plot, file = "results/profile_bestfits_plot.pdf", width = 8, height = 8)
+
 
 # Create best fit object
 best <- best.fits[1,]
