@@ -45,6 +45,10 @@ param_profiles <- function(dados, plot = TRUE, x_lab = c("Initial fraction of th
                                                                   "Relative force of reinfection of P.1", "Prevalence of the previous infection",
                                                                   "Intrinsic growth rate")) {
     value.col <- "neg.loglike"
+    #####correcting the little bug pointed out by the reviewer by hand
+    colnames(dados)[6] <- value.col
+    dados[,6] <- -dados[,6]
+    #####
     margin.cols <- setdiff(colnames(dados), value.col)
     perfil <- list()
     plots.perfis <- list()

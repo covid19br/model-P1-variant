@@ -67,11 +67,10 @@ profile_main_plot
 #                         optimizer = "optimx",
 #                         method = "bobyqa")
 
-best.fits <- read.csv(paste0(LOCATION, "/best.fits.csv"))
+best.fits <- read.csv(paste0(LOCATION, "/best.fits.corrected.csv"))
 
 ## Plot profile from best fits
-
-profile_bestfits <- param_profiles(best.fits %>% select(-loglike))
+profile_bestfits <- param_profiles(best.fits)
 profile_bestfits$plots[[1]] <- profile_bestfits$plots[[1]] + xlim(0.00033,0.00037) + ylim(0,0.004)#+ xlim(0.00033,0.00037) + ylim(0,0.0015)
 profile_bestfits$plots[[2]] <- profile_bestfits$plots[[2]] + xlim(2.604,2.6059) + ylim(0,0.0001)
 profile_bestfits$plots[[3]] <- profile_bestfits$plots[[3]] + xlim(0.0278,0.0280) + ylim(0,0.00015)
